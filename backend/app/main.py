@@ -7,11 +7,16 @@ app = FastAPI(title="LifeOS Backend API")
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"], # Update for production
+    allow_origins=["*"],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+# ADD THIS new
+@app.get("/")
+async def root():
+    return {"status": "running"}
 
 @app.get("/api/health")
 async def health_check():
