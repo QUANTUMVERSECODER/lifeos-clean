@@ -1,77 +1,73 @@
-import axios from 'axios';
+import axios from "axios";
 
-// Base API instance matching Nginx config routing
-// Base API instance matching Nginx config routing
+/*
+  Automatically switch between:
+  - Local development
+  - Production (Railway backend)
+*/
+
+const BACKEND_BASE_URL =
+  process.env.NODE_ENV === "production"
+    ? "https://lifeos-clean-production.up.railway.app/api/v1"
+    : "http://localhost:8000/api/v1";
+
+const ML_BASE_URL =
+  process.env.NODE_ENV === "production"
+    ? "https://lifeos-clean-production.up.railway.app/ml"
+    : "http://localhost:8001/ml";
+
+// ===============================
+// MAIN API
+// ===============================
 export const api = axios.create({
-    baseURL: 'http://localhost:8000/api/v1',
-    headers: {
-        'Content-Type': 'application/json',
-    },
-    withCredentials: true, // Crucial for HTTP-Only Refresh cookies
+  baseURL: BACKEND_BASE_URL,
+  headers: {
+    "Content-Type": "application/json",
+  },
+  withCredentials: false, // IMPORTANT: disable for now (fixes CORS issue)
 });
 
-// Interceptor to attach JWT token
+// Attach JWT token
 api.interceptors.request.use((config) => {
-    if (typeof window !== 'undefined') {
-        const token = localStorage.getItem('token');
-        if (token) {
-            config.headers.Authorization = `Bearer ${token}`;
-        }
+  if (typeof window !== "undefined") {
+    const token = localStorage.getItem("token");
+    if (token) {
+      config.headers.Authorization = `Bearer ${token}`;
     }
-    return config;
+  }
+  return config;
 });
 
+// Handle 401 (optional future refresh logic)
 api.interceptors.response.use(
-    (response) => response,
-    async (error) => {
-        const originalRequest = error.config;
-
-        // If 401 and we haven't already retried
-        if (error.response?.status === 401 && !originalRequest._retry) {
-            originalRequest._retry = true;
-
-            try {
-                // Attempt to rotate the access token using the HTTP-only refresh cookie
-                const res = await axios.post('http://localhost:8000/api/v1/refresh', {}, {
-                    withCredentials: true
-                });
-
-                if (res.status === 200) {
-                    const newAccessToken = res.data.access_token;
-                    localStorage.setItem('token', newAccessToken);
-
-                    // Update header and retry original request
-                    originalRequest.headers.Authorization = `Bearer ${newAccessToken}`;
-                    return api(originalRequest);
-                }
-            } catch (refreshErr) {
-                // Refresh failed (cookie expired, invalid, or missing). Wipe local and force re-auth.
-                if (typeof window !== 'undefined') {
-                    localStorage.removeItem('token');
-                    window.location.href = '/login';
-                }
-                return Promise.reject(refreshErr);
-            }
-        }
-
-        return Promise.reject(error);
+  (response) => response,
+  async (error) => {
+    if (error.response?.status === 401) {
+      if (typeof window !== "undefined") {
+        localStorage.removeItem("token");
+        window.location.href = "/login";
+      }
     }
+    return Promise.reject(error);
+  }
 );
 
-// ML specific service API
+// ===============================
+// ML API
+// ===============================
 export const mlApi = axios.create({
-    baseURL: 'http://localhost:8001/ml',
-    headers: {
-        'Content-Type': 'application/json',
-    },
+  baseURL: ML_BASE_URL,
+  headers: {
+    "Content-Type": "application/json",
+  },
 });
 
 mlApi.interceptors.request.use((config) => {
-    if (typeof window !== 'undefined') {
-        const token = localStorage.getItem('token');
-        if (token) {
-            config.headers.Authorization = `Bearer ${token}`;
-        }
+  if (typeof window !== "undefined") {
+    const token = localStorage.getItem("token");
+    if (token) {
+      config.headers.Authorization = `Bearer ${token}`;
     }
-    return config;
+  }
+  return config;
 });
