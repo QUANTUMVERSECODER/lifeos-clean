@@ -13,7 +13,7 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# ADD THIS
+# ADD THIS new
 @app.get("/")
 async def root():
     return {"status": "running"}
