@@ -5,15 +5,20 @@ from app.core.config import settings
 
 app = FastAPI(title="LifeOS Backend API")
 
+# ✅ FIXED CORS CONFIG
+origins = [
+    "http://localhost:3000",                 # local dev
+    "https://lifeos-clean.vercel.app",       # production frontend
+]
+
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
-    allow_credentials=True,
+    allow_origins=origins,
+    allow_credentials=False,  # MUST be False unless you fully configure cookies
     allow_methods=["*"],
     allow_headers=["*"],
 )
 
-# ADD THIS new
 @app.get("/")
 async def root():
     return {"status": "running"}
