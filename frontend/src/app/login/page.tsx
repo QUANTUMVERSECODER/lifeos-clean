@@ -87,7 +87,7 @@ export default function Login() {
 
         try {
             // 🔥 FIXED ROUTE HERE
-            const res = await api.post("/auth/google", {
+            const res = await api.post("/google", {
                 id_token: credentialResponse.credential,
             });
 
