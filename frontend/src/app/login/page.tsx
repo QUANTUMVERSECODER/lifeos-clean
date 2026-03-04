@@ -76,35 +76,47 @@ export default function Login() {
     // ==========================
     // GOOGLE LOGIN
     // ==========================
-    const handleGoogleSuccess = async (credentialResponse: any) => {
-        if (!credentialResponse?.credential) {
-            setError("Google authentication failed.");
-            return;
-        }
+const handleGoogleSuccess = async (credentialResponse: any) => {
+    if (!credentialResponse?.credential) {
+        setError("Google authentication failed.");
+        return;
+    }
 
-        setIsLoading(true);
-        setError(null);
+    setIsLoading(true);
+    setError(null);
 
-        try {
-            // 🔥 FIXED ROUTE HERE
-            const res = await api.post("/google", {
-                id_token: credentialResponse.credential,
-            });
-
-            const token = res.data.access_token;
-
-            if (token) {
-                localStorage.setItem("token", token);
-                document.cookie = `token=${token}; path=/; max-age=86400; SameSite=Strict`;
-                router.push("/dashboard");
+    try {
+        const res = await fetch(
+            "https://lifeos-clean-production.up.railway.app/api/v1/auth/google",
+            {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                },
+                body: JSON.stringify({
+                    id_token: credentialResponse.credential,
+                }),
             }
-        } catch (err: any) {
-            console.error("Google login error:", err?.response?.data || err);
-            setError("Google Login failed. Please try again.");
-        } finally {
-            setIsLoading(false);
+        );
+
+        if (!res.ok) {
+            throw new Error("Google login failed");
         }
-    };
+
+        const data = await res.json();
+
+        if (data.access_token) {
+            localStorage.setItem("token", data.access_token);
+            document.cookie = `token=${data.access_token}; path=/; max-age=86400; SameSite=Strict`;
+            router.push("/dashboard");
+        }
+    } catch (err) {
+        console.error("Google login error:", err);
+        setError("Google Login failed. Please try again.");
+    } finally {
+        setIsLoading(false);
+    }
+};
 
     if (!clientId) {
         return (
