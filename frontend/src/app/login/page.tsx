@@ -15,7 +15,7 @@ export default function Login() {
     const [isLoading, setIsLoading] = useState(false);
     const [theme, setTheme] = useState("dark");
 
-    const clientId = process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID;
+    const clientId = process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID!;
 
     useEffect(() => {
         const stored = localStorage.getItem("theme") || "dark";
@@ -40,9 +40,10 @@ export default function Login() {
         }
     };
 
-    // ==========================
-    // EMAIL LOGIN
-    // ==========================
+    /* ==========================
+       EMAIL LOGIN
+    ========================== */
+
     const handleLogin = async (e: React.FormEvent) => {
         e.preventDefault();
         setError(null);
@@ -73,9 +74,10 @@ export default function Login() {
         }
     };
 
-    // ==========================
-    // GOOGLE LOGIN
-    // ==========================
+    /* ==========================
+       GOOGLE LOGIN
+    ========================== */
+
     const handleGoogleSuccess = async (credentialResponse: any) => {
         if (!credentialResponse?.credential) {
             setError("Google authentication failed.");
@@ -86,101 +88,93 @@ export default function Login() {
         setError(null);
 
         try {
-            // 🔥 FIXED ROUTE HERE
-            const res = await api.post("/auth/google", {
-                id_token: credentialResponse.credential,
-            });
+            const res = await fetch(
+                "https://lifeos-clean-production.up.railway.app/api/v1/auth/google",
+                {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json",
+                    },
+                    body: JSON.stringify({
+                        id_token: credentialResponse.credential,
+                    }),
+                }
+            );
 
-            const token = res.data.access_token;
+            if (!res.ok) {
+                throw new Error("Google login failed");
+            }
 
-            if (token) {
-                localStorage.setItem("token", token);
-                document.cookie = `token=${token}; path=/; max-age=86400; SameSite=Strict`;
+            const data = await res.json();
+
+            if (data.access_token) {
+                localStorage.setItem("token", data.access_token);
+                document.cookie = `token=${data.access_token}; path=/; max-age=86400; SameSite=Strict`;
                 router.push("/dashboard");
             }
-        } catch (err: any) {
-            console.error("Google login error:", err?.response?.data || err);
+        } catch (err) {
+            console.error("Google login error:", err);
             setError("Google Login failed. Please try again.");
         } finally {
             setIsLoading(false);
         }
     };
 
-    if (!clientId) {
-        return (
-            <div className="min-h-screen flex items-center justify-center">
-                <p className="text-red-500">
-                    Google Client ID is not configured.
-                </p>
-            </div>
-        );
-    }
-
     return (
         <GoogleOAuthProvider clientId={clientId}>
-            <div className="min-h-screen flex flex-col md:flex-row bg-[var(--bg-main)] text-[var(--text-main)] transition-colors duration-300">
+            <div className="min-h-screen flex flex-col md:flex-row bg-[var(--bg-main)] text-[var(--text-main)]">
 
-                {/* Theme Toggle Mobile */}
-                <div className="absolute top-4 right-4 z-50 md:hidden">
+                {/* Theme Toggle */}
+                <div className="absolute top-4 right-4 z-50">
                     <button
                         onClick={toggleTheme}
-                        className="p-2 text-white hover:bg-white/10 rounded-full transition-colors backdrop-blur-sm bg-black/20 shadow-sm border border-white/10"
+                        className="p-2 text-white hover:bg-white/10 rounded-full bg-black/20"
                     >
-                        {theme === "dark" ? <Sun size={20} /> : <Moon size={20} />}
+                        {theme === "dark" ? <Sun size={20}/> : <Moon size={20}/>}
                     </button>
                 </div>
 
-                {/* Left Branding */}
-                <div className={`w-full md:w-1/2 flex flex-col justify-center px-8 py-12 md:px-16 lg:px-24 text-white relative overflow-hidden transition-colors duration-300 ${theme === "dark" ? "bg-[#7f1d1d]" : "bg-[#DC2626]"}`}>
-                    <div className="relative z-10 w-full max-w-lg mx-auto md:mx-0">
-                        <h1 className="text-5xl font-extrabold mb-4 tracking-tight">LifeOS</h1>
-                        <p className="text-xl text-red-100 mb-12">
-                            Design your day.<br />Optimize your life.
-                        </p>
+                {/* LEFT SIDE */}
+                <div className={`w-full md:w-1/2 flex flex-col justify-center px-12 text-white ${theme === "dark" ? "bg-[#7f1d1d]" : "bg-[#DC2626]"}`}>
+                    <h1 className="text-5xl font-bold mb-4">LifeOS</h1>
 
-                        <div className="space-y-6">
-                            <Feature icon={<HeartPulse />} text="Track Health & Sleep" />
-                            <Feature icon={<CheckSquare />} text="Smart Task Planning" />
-                            <Feature icon={<Activity />} text="ML-Based Burnout Monitoring" />
-                        </div>
+                    <p className="text-xl mb-10">
+                        Design your day.<br/>
+                        Optimize your life.
+                    </p>
+
+                    <div className="space-y-6">
+                        <Feature icon={<HeartPulse />} text="Track Health & Sleep" />
+                        <Feature icon={<CheckSquare />} text="Smart Task Planning" />
+                        <Feature icon={<Activity />} text="ML Burnout Monitoring" />
                     </div>
                 </div>
 
-                {/* Right Login Panel */}
-                <div className="w-full md:w-1/2 flex flex-col justify-center p-8 max-w-sm mx-auto w-full">
+                {/* RIGHT SIDE */}
+                <div className="w-full md:w-1/2 flex flex-col justify-center p-8 max-w-sm mx-auto">
 
-                    <div className="text-center mb-8">
-                        <h2 className="text-3xl font-bold mb-2">Welcome Back</h2>
-                        <p className="text-[var(--text-muted)]">
-                            Sign in to continue
-                        </p>
-                    </div>
+                    <h2 className="text-3xl font-bold text-center mb-6">
+                        Welcome Back
+                    </h2>
 
                     {error && (
-                        <div className="bg-red-500/10 border border-red-500/30 text-red-500 text-sm p-3 rounded-lg text-center mb-6">
+                        <div className="bg-red-500/10 border border-red-500 text-red-500 text-sm p-3 rounded-lg mb-4 text-center">
                             {error}
                         </div>
                     )}
 
-                    {/* Google Login */}
-                    <div className="mb-6 flex justify-center">
+                    {/* GOOGLE LOGIN */}
+                    <div className="flex justify-center mb-6">
                         <GoogleLogin
                             onSuccess={handleGoogleSuccess}
-                            onError={() => setError("Google Login verification failed.")}
+                            onError={() => setError("Google Login verification failed")}
                             theme={theme === "dark" ? "filled_black" : "outline"}
-                            shape="rectangular"
                             width="300"
                         />
                     </div>
 
-                    <div className="relative flex items-center justify-center mb-6">
-                        <div className="border-t border-[var(--card-border)] w-full absolute"></div>
-                        <span className="bg-[var(--bg-main)] px-4 z-10 text-xs text-[var(--text-muted)] uppercase font-semibold tracking-wider">
-                            or sign in with email
-                        </span>
-                    </div>
-
                     <form onSubmit={handleLogin} className="space-y-4">
+
                         <input
                             type="email"
                             placeholder="Email"
@@ -201,25 +195,29 @@ export default function Login() {
 
                         <button
                             type="submit"
-                            className="btn-primary w-full mt-6 py-3"
+                            className="btn-primary w-full py-3"
                             disabled={isLoading}
                         >
                             {isLoading ? "Authenticating..." : "Sign In"}
                         </button>
+
                     </form>
+
                 </div>
             </div>
         </GoogleOAuthProvider>
     );
 }
 
+/* Feature Component */
+
 function Feature({ icon, text }: any) {
     return (
-        <div className="flex items-center gap-4 text-red-50">
+        <div className="flex items-center gap-4">
             <div className="p-2 bg-red-500/30 rounded-lg">
                 {icon}
             </div>
-            <span className="text-lg font-medium">{text}</span>
+            <span className="text-lg">{text}</span>
         </div>
     );
 }
