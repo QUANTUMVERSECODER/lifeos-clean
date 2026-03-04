@@ -88,28 +88,12 @@ export default function Login() {
         setError(null);
 
         try {
-            const res = await fetch(
-                "https://lifeos-clean-production.up.railway.app/api/v1/auth/google",
-                {
-                    method: "POST",
-                    headers: {
-                        "Content-Type": "application/json",
-                    },
-                    body: JSON.stringify({
-                        id_token: credentialResponse.credential,
-                    }),
-                }
-            );
+            const res = await api.post('/google', { id_token: credentialResponse.credential });
+            const token = res.data.access_token;
 
-            if (!res.ok) {
-                throw new Error("Google login failed");
-            }
-
-            const data = await res.json();
-
-            if (data.access_token) {
-                localStorage.setItem("token", data.access_token);
-                document.cookie = `token=${data.access_token}; path=/; max-age=86400; SameSite=Strict`;
+            if (token) {
+                localStorage.setItem("token", token);
+                document.cookie = `token=${token}; path=/; max-age=86400; SameSite=Strict`;
                 router.push("/dashboard");
             }
         } catch (err) {
@@ -130,7 +114,7 @@ export default function Login() {
                         onClick={toggleTheme}
                         className="p-2 text-white hover:bg-white/10 rounded-full bg-black/20"
                     >
-                        {theme === "dark" ? <Sun size={20}/> : <Moon size={20}/>}
+                        {theme === "dark" ? <Sun size={20} /> : <Moon size={20} />}
                     </button>
                 </div>
 
@@ -139,7 +123,7 @@ export default function Login() {
                     <h1 className="text-5xl font-bold mb-4">LifeOS</h1>
 
                     <p className="text-xl mb-10">
-                        Design your day.<br/>
+                        Design your day.<br />
                         Optimize your life.
                     </p>
 
