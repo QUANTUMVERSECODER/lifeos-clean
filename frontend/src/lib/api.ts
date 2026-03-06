@@ -8,12 +8,12 @@ import axios from "axios";
 
 const BACKEND_BASE_URL =
   process.env.NODE_ENV === "production"
-    ? "https://lifeos-clean-production.up.railway.app/api/v1"
+    ? "https://lifeos-clean-production-8292.up.railway.app/api/v1"
     : "http://localhost:8000/api/v1";
 
 const ML_BASE_URL =
   process.env.NODE_ENV === "production"
-    ? "https://lifeos-clean-production.up.railway.app/ml"
+    ? "https://lifeos-clean-production-8292.up.railway.app/ml"
     : "http://localhost:8001/ml";
 
 // ===============================
